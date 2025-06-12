@@ -1,21 +1,21 @@
 const { nanoid } = require('nanoid');
 const jwt = require('jsonwebtoken');
-const users = require('../users');
+const users = require('./users');
 
-const SECRET_KEY = 'my-secret';
+const SECRET_KEY = process.env.JWT_SECRET;
 
 const registerUserHandler = (request, h) => {
-  const { username, password } = request.payload;
-
-  if (users.find((u) => u.username === username)) {
+  const { email, password } = request.payload;
+  
+  if (users.find((u) => u.email === email)) {
     return h.response({
       status: 'fail',
-      message: 'Username already exists',
+      message: 'Email already registered',
     }).code(400);
   }
 
   const id = nanoid(16);
-  const newUser = { id, username, password };
+  const newUser = { id, email, password };
 
   users.push(newUser);
 
@@ -24,24 +24,24 @@ const registerUserHandler = (request, h) => {
     message: 'User successfully registered',
     data: {
       id,
-      username,
+      email,
     },
   }).code(201);
 };
 
 const loginUserHandler = (request, h) => {
-  const { username, password } = request.payload;
+  const { email, password } = request.payload;
 
-  const user = users.find((u) => u.username === username && u.password === password);
+  const user = users.find((u) => u.email === email && u.password === password);
 
   if (!user) {
     return h.response({
       status: 'fail',
-      message: 'Invalid username or password',
+      message: 'Invalid email or password',
     }).code(401);
   }
 
-  const token = jwt.sign({ userId: user.id }, SECRET_KEY, { expiresIn: '1h' });
+  const token = jwt.sign({ userId: user.id }, SECRET_KEY);
 
   return h.response({
     status: 'success',
@@ -51,8 +51,8 @@ const loginUserHandler = (request, h) => {
 };
 
 const getUserByIdHandler = (request, h) => {
-  const { id } = request.params;
-  const user = users.find((u) => u.id === id);
+  const { userId } = request.auth.credentials;
+  const user = users.find((u) => u.id === userId);
 
   if (!user) {
     return h.response({
@@ -66,17 +66,17 @@ const getUserByIdHandler = (request, h) => {
     data: {
       user: {
         id: user.id,
-        username: user.username,
+        email: user.email,
       },
     },
   }).code(200);
 };
 
 const editUserByIdHandler = (request, h) => {
-  const { id } = request.params;
-  const { username, password } = request.payload;
+  const { userId } = request.auth.credentials;
+  const { email, password } = request.payload;
 
-  const index = users.findIndex((u) => u.id === id);
+  const index = users.findIndex((u) => u.id === userId);
 
   if (index === -1) {
     return h.response({
@@ -87,7 +87,7 @@ const editUserByIdHandler = (request, h) => {
 
   users[index] = {
     ...users[index],
-    username,
+    email,
     password,
   };
 
@@ -98,8 +98,8 @@ const editUserByIdHandler = (request, h) => {
 };
 
 const deleteUserByIdHandler = (request, h) => {
-  const { id } = request.params;
-  const index = users.findIndex((u) => u.id === id);
+  const { userId } = request.auth.credentials;
+  const index = users.findIndex((u) => u.id === userId);
 
   if (index === -1) {
     return h.response({

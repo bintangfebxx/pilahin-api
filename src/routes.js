@@ -6,6 +6,8 @@ const {
   deleteUserByIdHandler,
 } = require('./handler');
 
+const verifyToken = require('./utils/verifyToken');
+
 const routes = [
   {
     method: 'POST',
@@ -19,18 +21,27 @@ const routes = [
   },
   {
     method: 'GET',
-    path: '/profile/{id}',
-    handler: getUserByIdHandler,
+    path: '/profile',
+    options: {
+      pre: [{ method: verifyToken }],
+      handler: getUserByIdHandler,
+    },
   },
   {
     method: 'PUT',
-    path: '/profile/{id}',
-    handler: editUserByIdHandler,
+    path: '/profile',
+    options: {
+      pre: [{ method: verifyToken }],
+      handler: editUserByIdHandler,
+    },
   },
   {
     method: 'DELETE',
-    path: '/profile/{id}',
-    handler: deleteUserByIdHandler,
+    path: '/profile',
+    options: {
+      pre: [{ method: verifyToken }],
+      handler: deleteUserByIdHandler,
+    },
   },
 ];
  
